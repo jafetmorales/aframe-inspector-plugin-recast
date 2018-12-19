@@ -1,7 +1,7 @@
 const RecastConfig = [
   {
     name: 'cellSize',
-    default: 0.3,
+    default: .05,//0.3,
     min: 0.05,
     max: 3,
     step: 0.01,

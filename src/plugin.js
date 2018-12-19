@@ -92,7 +92,11 @@ class RecastPlugin {
           ? window.alert(e.message)
           : window.alert('Oops, something went wrong.');
       })
-      .then(() => this.hideSpinner());
+      .then(() => {
+        this.hideSpinner()
+        this.exportGLTF()
+      });
+
 
   }
 
@@ -109,9 +113,10 @@ class RecastPlugin {
    * @return {FormData}
    */
   serializeScene () {
-    const selectorInput = this.panelEl.querySelector(`input[name=selector]`);
-    const selector = selectorInput.value;
-
+    // const selectorInput = this.panelEl.querySelector(`input[name=selector]`);
+    // const selector = selectorInput.value;
+    const selector='A-GRID,a-entity'
+    
     this.sceneEl.object3D.updateMatrixWorld();
     this.markInspectorNodes();
 
@@ -158,13 +163,15 @@ class RecastPlugin {
    * object named 'picker' is one of them, walk up the tree, and mark
    * everything below its root.
    */
+   //////THIS WAS MODIFIED BY JAFET
+   ///YOU SHOULD BE MARKING THE PLAYER SO THAT HE IS NOT EVALUATED BY THE PLUGIN AS PART OF THE ARCHITECTURE
   markInspectorNodes () {
-    const scene = this.sceneEl.object3D;
-    let inspectorNode = scene.getObjectByName('picker');
-    while (inspectorNode.parent !== scene) inspectorNode = inspectorNode.parent;
-    inspectorNode.traverse((node) => {
-      node.userData._isInspectorNode = true;
-    });
+    // const scene = this.sceneEl.object3D;
+    // let inspectorNode = scene.getObjectByName('picker');
+    // while (inspectorNode.parent !== scene) inspectorNode = inspectorNode.parent;
+    // inspectorNode.traverse((node) => {
+    //   node.userData._isInspectorNode = true;
+    // });
   }
 
   /**
@@ -177,6 +184,7 @@ class RecastPlugin {
       navMeshEl = document.createElement('a-entity');
       navMeshEl.setAttribute('nav-mesh', '');
       navMeshEl.setAttribute('id', 'nav-mesh');
+      // navMeshEl.setAttribute('color','808080')
       this.sceneEl.appendChild(navMeshEl);
     }
     setTimeout(() => {
@@ -306,6 +314,10 @@ AFRAME.registerComponent('inspector-plugin-recast', {
   },
   play: function () {
     this.plugin.setVisible(false);
+  },
+  render: function () {
+    this.plugin.rebuild()
   }
+  
 });
 
