@@ -18,6 +18,8 @@ var S3 = require('aws-sdk/clients/s3');
 // import { FBAppDatabase } from '../firebaseInit.js'
 const dbFirebase = require('./FirebaseApp.js')
 
+var firebase = require('firebase');
+
 
 class RecastError extends Error {}
 
@@ -27,7 +29,7 @@ class RecastError extends Error {}
  * Recast navigation mesh plugin.
  */
 class RecastPlugin {
-  constructor(panelEl, sceneEl, host) {
+  constructor(panelEl, sceneEl, host, expiration) {
     this.panelEl = panelEl;
     this.sceneEl = sceneEl;
     this.spinnerEl = panelEl.querySelector('.recast-spinner');
@@ -35,6 +37,7 @@ class RecastPlugin {
     this.navMesh = null;
     this.host = host;
     this.bindListeners();
+    this.expiration = expiration
 
     // this.bucketName = 'tensor-objects'
     // this.s3 = new S3({
@@ -42,7 +45,23 @@ class RecastPlugin {
     //   params: { Bucket: this.bucketName }
     // });
 
-    this.ref = dbFirebase.ref('el_clon_29') //this.state.universe);
+    this.dbFirebase = dbFirebase
+
+
+
+
+
+    this.user = firebase.auth().currentUser;
+    console.log('The user is:')
+    console.log(this.user)
+
+
+
+
+
+
+    // this.currentWorld = "el_clon_29"
+    // this.ref = dbFirebase.ref('el_clon_29') //this.state.universe);
     this.objectId = 'nav-mesh' //jsonified.id //Date.now()
 
 
@@ -325,7 +344,7 @@ class RecastPlugin {
 
 
       this.s3.upload({
-      // this.s3.getSignedUrl('putObject', {
+        // this.s3.getSignedUrl('putObject', {
         Bucket: this.bucketName,
         Key: folderKey,
         ContentType: 'data:text/plain;charset=utf-8',
@@ -345,11 +364,36 @@ class RecastPlugin {
         console.log('the url is:')
         console.log(url)
 
-        var params = { Bucket: this.bucketName, Key: folderKey, Expires: 600 };
+        var params = { Bucket: this.bucketName, Key: folderKey, Expires: this.expiration };
         var url = this.s3.getSignedUrl('getObject', params);
         console.log('The URL is', url);
 
-        this.ref.child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
+
+
+
+
+
+        //     var user = firebase.auth().currentUser;
+        //     console.log('The user is:')
+        //     console.log(user)
+        //     this.dbFirebase.ref("users").child(user.uid).child("currentWorld").once("value").then(function(snapshot) {
+        //       const currentWorld = snapshot.toJSON();
+        //       console.log('this is what was read')
+        //       console.log(currentWorld)
+        //     // this.dbFirebase.ref(currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
+        // }.bind(this))
+
+        this.dbFirebase.ref("users").child(this.user.uid).child("currentWorld").once("value").then(function(snapshot) {
+          this.user.currentWorld = snapshot.toJSON();
+          console.log('this is what was read')
+          console.log(this.user.currentWorld)
+          // this.dbFirebase.ref(currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
+          this.dbFirebase.ref(this.user.currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
+        }.bind(this))
+
+
+
+
       }.bind(this));
 
 
@@ -438,6 +482,8 @@ class RecastPlugin {
 AFRAME.registerComponent('inspector-plugin-recast', {
   schema: {
     serviceURL: { default: 'https://recast-api.donmccurdy.com' },
+    linkExpiration: { default: 604800 },
+    interval: { default: 60 }
   },
   init: function() {
     const wrapEl = document.createElement('div');
@@ -445,16 +491,45 @@ AFRAME.registerComponent('inspector-plugin-recast', {
     wrapEl.innerHTML = template({ RecastConfig: RecastConfig });
     const panelEl = wrapEl.children[0];
     document.body.appendChild(panelEl);
-    this.plugin = new RecastPlugin(panelEl, this.el, this.data.serviceURL);
+    this.plugin = new RecastPlugin(panelEl, this.el, this.data.serviceURL, this.data.linkExpiration);
   },
   pause: function() {
-    this.plugin.setVisible(true);
+    // this.plugin.setVisible(true);
+    console.log('ABOUT TO CLEAR THE INTERVAL')
+    clearInterval(this.rebuildIntervalId)
   },
   play: function() {
     this.plugin.setVisible(false);
+
+
+
+    //     function timeout() {
+    //     setTimeout(function () {
+    //         // Do Something Here
+    //         // Then recall the parent function to
+    //         // create a recursive loop.
+    //         timeout();
+    //       this.render() 
+    //     }.bind(this), this.data.expiration*1000);
+    // }
+
+
+
+    this.rebuildIntervalId = setInterval(function() {
+      console.log('this.render is::::')
+      console.log(this.render)
+      // this.plugin.rebuild() 
+      this.render()
+    }.bind(this), this.data.interval * 1000);
+
+
   },
   render: function() {
     this.plugin.rebuild()
+  },
+  remove: function() {
+    console.log('ABOUT TO CLEAR THE INTERVAL')
+    clearInterval(this.rebuildIntervalId)
   }
 
 });
