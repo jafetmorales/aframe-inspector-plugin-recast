@@ -9,13 +9,25 @@ const OBJExporter = require('../lib/OBJExporter');
 require('./components/nav-debug-pointer');
 require('./plugin.scss');
 
+// import AWS object without services
+var AWS = require('aws-sdk/global');
+// import individual service
+var S3 = require('aws-sdk/clients/s3');
+
+
+// import { FBAppDatabase } from '../firebaseInit.js'
+const dbFirebase = require('./FirebaseApp.js')
+
+
 class RecastError extends Error {}
+
+
 
 /**
  * Recast navigation mesh plugin.
  */
 class RecastPlugin {
-  constructor (panelEl, sceneEl, host) {
+  constructor(panelEl, sceneEl, host) {
     this.panelEl = panelEl;
     this.sceneEl = sceneEl;
     this.spinnerEl = panelEl.querySelector('.recast-spinner');
@@ -23,14 +35,57 @@ class RecastPlugin {
     this.navMesh = null;
     this.host = host;
     this.bindListeners();
+
+    // this.bucketName = 'tensor-objects'
+    // this.s3 = new S3({
+    //   apiVersion: '2006-03-01',
+    //   params: { Bucket: this.bucketName }
+    // });
+
+    this.ref = dbFirebase.ref('el_clon_29') //this.state.universe);
+    this.objectId = 'nav-mesh' //jsonified.id //Date.now()
+
+
+
+
+    console.log('the cognito token in plugin is:')
+    console.log(window.COGNITO_TOKEN)
+    AWS.config.region = 'us-east-2';
+    AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+      IdentityPoolId: 'us-east-2:dfec3483-aade-48a4-b2d1-40a142000817',
+      // IdentityId: AWS.config.credentials.identityId, //AWS.config.credentials.params.IdentityId,
+      Logins: {
+        'cognito-identity.amazonaws.com': window.COGNITO_TOKEN
+      }
+
+    });
+    // // obtain credentials
+    // AWS.config.credentials.get(function(err) {
+    //   if (!err) {
+    console.log('Cognito Identity Id: ' + AWS.config.credentials.identityId);
+    //     console.log('CONGRATS, PLUGIN CAN ACCESS AWS')
+
+    this.bucketName = 'tensor-objects'
+    this.s3 = new S3({
+      apiVersion: '2006-03-01',
+      params: { Bucket: this.bucketName }
+    });
+    console.log('this.s3 is:')
+    console.log(this.s3)
+
+    //   }
+    //   else {
+    //     console.log('THERE WAS AN ERROR buddy')
+    //   }
+    // })
   }
 
   /** Attach event listeners to the panel DOM. */
-  bindListeners () {
+  bindListeners() {
     const settings = this.settings;
 
     // Update labels when sliders change.
-    RecastConfig.forEach(({name}) => {
+    RecastConfig.forEach(({ name }) => {
       const input = this.panelEl.querySelector(`input[name=${name}]`);
       settings[name] = input.value;
       input.addEventListener('input', () => {
@@ -51,7 +106,7 @@ class RecastPlugin {
    * Convert the current scene to an OBJ, rebuild the navigation mesh, and show
    * a preview of the navigation mesh in the scene.
    */
-  rebuild () {
+  rebuild() {
     this.validateForm();
 
     this.clearNavMesh();
@@ -60,7 +115,7 @@ class RecastPlugin {
     const params = this.serialize(this.settings);
 
     this.showSpinner();
-    fetch(`${this.host}/v1/build/?${params}`, {method: 'post', body: body})
+    fetch(`${this.host}/v1/build/?${params}`, { method: 'post', body: body })
       .then((response) => response.json())
       .then((json) => {
         if (!json.ok) throw new RecastError(json.message);
@@ -89,19 +144,22 @@ class RecastPlugin {
       .catch((e) => {
         console.error(e);
         e instanceof RecastError
-          ? window.alert(e.message)
-          : window.alert('Oops, something went wrong.');
+          ?
+          window.alert(e.message) :
+          window.alert('Oops, something went wrong.');
       })
       .then(() => {
         this.hideSpinner()
         this.exportGLTF()
+
+        this.uploadNavMesh()
       });
 
 
   }
 
   /** Validate all form inputs. */
-  validateForm () {
+  validateForm() {
     const form = this.panelEl.querySelector('.panel-content');
     if (!form.checkValidity()) {
       this.fail('Please correct errors navmesh configuration.');
@@ -112,17 +170,17 @@ class RecastPlugin {
    * Collect all (or selected) objects from scene.
    * @return {FormData}
    */
-  serializeScene () {
+  serializeScene() {
     // const selectorInput = this.panelEl.querySelector(`input[name=selector]`);
     // const selector = selectorInput.value;
-    const selector='A-GRID,a-entity'
-    
+    const selector = 'A-GRID,a-entity:not(.exclude_from_nav_mesh)'
+
     this.sceneEl.object3D.updateMatrixWorld();
     this.markInspectorNodes();
 
     const reducer = new GeometryReducer({ ignore: /^[XYZE]+|picker$/ });
 
-    if ( selector ) {
+    if (selector) {
 
       const selected = this.sceneEl.querySelectorAll(selector);
       const visited = new Set();
@@ -136,20 +194,21 @@ class RecastPlugin {
         });
       });
 
-    } else {
+    }
+    else {
 
       this.sceneEl.object3D.traverse((o) => reducer.add(o));
 
     }
 
     console.info('Pruned scene graph:');
-    this.printGraph( reducer.getBuildList() );
+    this.printGraph(reducer.getBuildList());
 
     const { position, index } = reducer.reduce();
 
     // Convert vertices and index to Blobs, add to FormData, and return.
-    const positionBlob = new Blob([new Float32Array(position)], {type: 'application/octet-stream'});
-    const indexBlob = new Blob([new Int32Array(index)], {type: 'application/octet-stream'});
+    const positionBlob = new Blob([new Float32Array(position)], { type: 'application/octet-stream' });
+    const indexBlob = new Blob([new Int32Array(index)], { type: 'application/octet-stream' });
     const formData = new FormData();
     formData.append('position', positionBlob);
     formData.append('index', indexBlob);
@@ -163,9 +222,9 @@ class RecastPlugin {
    * object named 'picker' is one of them, walk up the tree, and mark
    * everything below its root.
    */
-   //////THIS WAS MODIFIED BY JAFET
-   ///YOU SHOULD BE MARKING THE PLAYER SO THAT HE IS NOT EVALUATED BY THE PLUGIN AS PART OF THE ARCHITECTURE
-  markInspectorNodes () {
+  //////THIS WAS MODIFIED BY JAFET
+  ///YOU SHOULD BE MARKING THE PLAYER SO THAT HE IS NOT EVALUATED BY THE PLUGIN AS PART OF THE ARCHITECTURE
+  markInspectorNodes() {
     // const scene = this.sceneEl.object3D;
     // let inspectorNode = scene.getObjectByName('picker');
     // while (inspectorNode.parent !== scene) inspectorNode = inspectorNode.parent;
@@ -178,12 +237,14 @@ class RecastPlugin {
    * Injects navigation mesh into the scene, creating entity if needed.
    * @param  {THREE.Mesh} navMesh
    */
-  injectNavMesh (navMesh) {
+  injectNavMesh(navMesh) {
     let navMeshEl = this.sceneEl.querySelector('[nav-mesh]');
     if (!navMeshEl) {
       navMeshEl = document.createElement('a-entity');
-      navMeshEl.setAttribute('nav-mesh', '');
+      navMeshEl.setAttribute('nav-mesh', 'DUMMY_STRING_BRO');
       navMeshEl.setAttribute('id', 'nav-mesh');
+      navMeshEl.setAttribute('class', 'exclude_from_nav_mesh');
+      navMeshEl.setAttribute('visible', 'false');
       // navMeshEl.setAttribute('color','808080')
       this.sceneEl.appendChild(navMeshEl);
     }
@@ -195,28 +256,105 @@ class RecastPlugin {
   }
 
   /** Removes navigation mesh, if any, from scene. */
-  clearNavMesh () {
+  clearNavMesh() {
     const navMeshEl = this.sceneEl.querySelector('[nav-mesh]');
     if (navMeshEl) navMeshEl.removeObject3D('mesh');
   }
 
   /** Export to glTF 2.0. */
-  exportGLTF () {
+  exportGLTF() {
     if (!this.navMesh) throw new Error('[RecastPlugin] No navigation mesh.');
     const exporter = new THREE.GLTFExporter();
     const backupMaterial = this.navMesh.material;
-    this.navMesh.material = new THREE.MeshStandardMaterial({color: 0x808080, metalness: 0, roughness: 1});
+    this.navMesh.material = new THREE.MeshStandardMaterial({ color: 0x808080, metalness: 0, roughness: 1 });
     exporter.parse(this.navMesh, (gltfContent) => {
       this.navMesh.material = backupMaterial;
       this._download('navmesh.gltf', JSON.stringify(gltfContent));
-    }, {binary: false});
+    }, { binary: false });
   }
 
   /** Export to OBJ. */
-  exportOBJ () {
+  exportOBJ() {
     if (!this.navMesh) throw new Error('[RecastPlugin] No navigation mesh.');
     const exporter = new OBJExporter();
     this._download('navmesh.obj', exporter.parse(this.navMesh));
+  }
+
+  /** Upload nav mesh. */
+  uploadNavMesh() {
+    if (!this.navMesh) throw new Error('[RecastPlugin] No navigation mesh.');
+    const exporter = new THREE.GLTFExporter();
+    const backupMaterial = this.navMesh.material;
+    this.navMesh.material = new THREE.MeshStandardMaterial({ color: 0x808080, metalness: 0, roughness: 1 });
+    exporter.parse(this.navMesh, (gltfContent) => {
+      this.navMesh.material = backupMaterial;
+      const data = JSON.stringify(gltfContent)
+      const fileName = 'navmesh' + (new Date().getTime())
+
+
+      console.log('this.s3 is:')
+      console.log(this.s3)
+      const cognitoIdentityId = AWS.config.credentials.identityId
+      var folderKey = 'navs/' + cognitoIdentityId + '/' + 'navmesh_' + (new Date().getTime()) + '.gltf'
+
+
+      // this.s3.getSignedUrl('putObject',{
+      //   Bucket: this.bucketName,
+      //   Key: folderKey,
+      //   // ContentType: 'data:text/plain;charset=utf-8',
+      //   Body: 'body'//data//
+      //   // ACL: 'private' //OTHER TYPES OF ACLS THAT ARE MORE PUBLIC SHOULD THROW BACK AN UNAUTHORIZED ERROR
+      //   //   ,
+      //   // ContentMD5: 'false',
+      //   // Expires: 604800
+      //   // }, function(err, data) {
+      // }, function(err, url) {
+      //   if (err) {
+      //     console.log('error is')
+      //     console.log(err)
+      //     return alert('There was an error creating your album: ' + err.message);
+      //   }
+      //   alert('Successfully uploaded new navmesh named:' + fileName);
+      //   console.log('the url is:')
+      //   console.log(url)
+      //   this.ref.child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
+      // }.bind(this));
+
+
+
+
+
+      this.s3.upload({
+      // this.s3.getSignedUrl('putObject', {
+        Bucket: this.bucketName,
+        Key: folderKey,
+        ContentType: 'data:text/plain;charset=utf-8',
+        Body: data,
+        ACL: 'private' //OTHER TYPES OF ACLS THAT ARE MORE PUBLIC SHOULD THROW BACK AN UNAUTHORIZED ERROR
+        //   ,
+        // ContentMD5: 'false',
+        // Expires: 604800
+        // }, function(err, data) {
+      }, function(err, url) {
+        if (err) {
+          console.log('error is')
+          console.log(err)
+          return alert('There was an error creating your album: ' + err.message);
+        }
+        // alert('Successfully uploaded new navmesh named:' + fileName);
+        console.log('the url is:')
+        console.log(url)
+
+        var params = { Bucket: this.bucketName, Key: folderKey, Expires: 600 };
+        var url = this.s3.getSignedUrl('getObject', params);
+        console.log('The URL is', url);
+
+        this.ref.child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
+      }.bind(this));
+
+
+
+    }, { binary: false });
   }
 
   /**
@@ -224,7 +362,7 @@ class RecastPlugin {
    * @param  {string} filename
    * @param  {string} content
    */
-  _download (filename, content) {
+  _download(filename, content) {
     const el = document.createElement('a');
     el.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
     el.setAttribute('download', filename);
@@ -239,7 +377,7 @@ class RecastPlugin {
    * Prints debug graph of a scene subtree.
    * @param  {THREE.Object3D} node
    */
-  printGraph (node) {
+  printGraph(node) {
 
     console.group(' <' + node.type + '> ' + node.name);
     node.children.forEach((child) => this.printGraph(child));
@@ -252,7 +390,7 @@ class RecastPlugin {
    * @param  {Object<string, *>} obj
    * @return {string}
    */
-  serialize (obj) {
+  serialize(obj) {
     const str = [];
     for (let p in obj) {
       if (obj.hasOwnProperty(p)) {
@@ -266,17 +404,17 @@ class RecastPlugin {
    * Sets visibility of the plugin panel.
    * @param {boolean} visible
    */
-  setVisible (visible) {
+  setVisible(visible) {
     this.panelEl.style.display = visible ? '' : 'none';
   }
 
   /** Shows the loading spinner. */
-  showSpinner () {
+  showSpinner() {
     this.spinnerEl.classList.add('active');
   }
 
   /** Hides the loading spinner. */
-  hideSpinner () {
+  hideSpinner() {
     this.spinnerEl.classList.remove('active');
   }
 
@@ -284,7 +422,7 @@ class RecastPlugin {
    * Displays a user-facing message then throws an error.
    * @param {string} msg
    */
-  fail (msg) {
+  fail(msg) {
     window.alert(msg);
     throw new Error(msg);
   }
@@ -299,25 +437,24 @@ class RecastPlugin {
  */
 AFRAME.registerComponent('inspector-plugin-recast', {
   schema: {
-    serviceURL: {default: 'https://recast-api.donmccurdy.com'},
+    serviceURL: { default: 'https://recast-api.donmccurdy.com' },
   },
-  init: function () {
+  init: function() {
     const wrapEl = document.createElement('div');
     const template = Handlebars.compile(panelTpl);
-    wrapEl.innerHTML = template({RecastConfig: RecastConfig});
+    wrapEl.innerHTML = template({ RecastConfig: RecastConfig });
     const panelEl = wrapEl.children[0];
     document.body.appendChild(panelEl);
     this.plugin = new RecastPlugin(panelEl, this.el, this.data.serviceURL);
   },
-  pause: function () {
+  pause: function() {
     this.plugin.setVisible(true);
   },
-  play: function () {
+  play: function() {
     this.plugin.setVisible(false);
   },
-  render: function () {
+  render: function() {
     this.plugin.rebuild()
   }
-  
-});
 
+});
