@@ -388,7 +388,7 @@ class RecastPlugin {
           console.log('this is what was read')
           console.log(this.user.currentWorld)
           // this.dbFirebase.ref(currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
-          this.dbFirebase.ref(this.user.currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
+          this.dbFirebase.ref("worlds").child(this.user.uid).child(this.user.currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
         }.bind(this))
 
 
