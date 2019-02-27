@@ -192,7 +192,9 @@ class RecastPlugin {
   serializeScene() {
     // const selectorInput = this.panelEl.querySelector(`input[name=selector]`);
     // const selector = selectorInput.value;
-    const selector = 'A-GRID,a-entity:not(.exclude_from_nav_mesh)'
+
+    // const selector = 'A-GRID,a-entity:not(.exclude_from_nav_mesh)'
+    const selector = 'A-GRID,A-RING,a-entity:not(.exclude_from_nav_mesh):not(#camera2):not(#nav-mesh):not(.environment):not(A-SKY):not(#stars)'
 
     this.sceneEl.object3D.updateMatrixWorld();
     this.markInspectorNodes();
@@ -479,11 +481,11 @@ class RecastPlugin {
  * API, and so we use this component to detect events (play/pause) indicating
  * that the inspector is (probably) opened or closed.
  */
-AFRAME.registerComponent('inspector-plugin-recast', {
+AFRAME.registerComponent('inspector-plugin-recast-client', {
   schema: {
     serviceURL: { default: 'https://recast-api.donmccurdy.com' },
     linkExpiration: { default: 604800 },
-    interval: { default: 60 }
+    interval: { default: 30 }
   },
   init: function() {
     const wrapEl = document.createElement('div');

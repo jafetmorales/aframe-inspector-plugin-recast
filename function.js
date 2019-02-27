@@ -4,7 +4,8 @@ const assert = require('fluent-assert');
 const recast = require('@donmccurdy/recast');
 const RecastConfig = require('./src/recast-config');
 
-const PORT = process.env.PORT || 3000;
+// const PORT = process.env.PORT || 3000;
+const PORT = 3000//process.env.PORT || 3000;
 
 // ---------------------------------------- //
 
@@ -54,7 +55,7 @@ app.post('/v1/build/', upload, (req, res) => {
   try {
 
     // Buffer references. Buffer.prototype.buffer is an ArrayBuffer.
-    const positionBuffer = files.position[0].buffer;
+    const positionBuffer = files.position[0].buffer; 
     const indexBuffer = files.index[0].buffer;
 
     const position = new Float32Array(

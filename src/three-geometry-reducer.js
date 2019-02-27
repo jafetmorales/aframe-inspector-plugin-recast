@@ -1,7 +1,7 @@
 const BufferGeometryUtils = require('../lib/BufferGeometryUtils');
 
 const DEFAULT_OPTIONS = {
-  maxExtent: 500,
+  maxExtent: 4000,//was 500 but changed by jafet
   maxFileSize: 25000000,
   ignore: '',
 };
@@ -61,7 +61,7 @@ class GeometryReducer {
     if ( boundingSphere.radius > maxExtent ) {
 
       throw new Error(
-        `Scene must have a bounding radius less than ${maxExtent}m. `
+        `Scene must have a bounding radius less than ${maxExtent}m and your bouding radius is ${boundingSphere.radius}. `
         + `Reduce size, filter large objects out, or run the plugin locally.`
       );
 
