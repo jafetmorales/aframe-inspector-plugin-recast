@@ -62,7 +62,12 @@ class RecastPlugin {
 
     // this.currentWorld = "el_clon_29"
     // this.ref = dbFirebase.ref('el_clon_29') //this.state.universe);
-    this.objectId = 'nav-mesh' //jsonified.id //Date.now()
+    // this.objectId = 'nav-mesh' //jsonified.id //Date.now()
+    
+    
+    // const el= this.sceneEl.querySelector('[nav-mesh]')
+    
+    // this.objectId = Date.now()
 
 
 
@@ -194,7 +199,8 @@ class RecastPlugin {
     // const selector = selectorInput.value;
 
     // const selector = 'A-GRID,a-entity:not(.exclude_from_nav_mesh)'
-    const selector = 'A-GRID,A-RING,a-entity:not(.exclude_from_nav_mesh):not(#camera2):not(#nav-mesh):not(.environment):not(A-SKY):not(#stars)'
+    // const selector = 'A-GRID,A-RING,a-entity:not(.exclude_from_nav_mesh):not(#camera2):not(#nav-mesh):not(.environment):not(A-SKY):not(#stars)'
+    const selector = 'A-GRID,A-RING,a-entity:not(.exclude_from_nav_mesh):not(#camera2):not(.environment):not(A-SKY):not(#stars):not([nav-mesh])'
 
     this.sceneEl.object3D.updateMatrixWorld();
     this.markInspectorNodes();
@@ -259,13 +265,20 @@ class RecastPlugin {
    * @param  {THREE.Mesh} navMesh
    */
   injectNavMesh(navMesh) {
+    // let navMeshEl = this.sceneEl.querySelector('[nav-mesh]');
+    //WE LOOK TO SEE IF THERE ARE ANY NAV MESHES ALREADY IN THE SCENE
     let navMeshEl = this.sceneEl.querySelector('[nav-mesh]');
     if (!navMeshEl) {
       navMeshEl = document.createElement('a-entity');
       navMeshEl.setAttribute('nav-mesh', 'DUMMY_STRING_BRO');
-      navMeshEl.setAttribute('id', 'nav-mesh');
+      navMeshEl.setAttribute('id', Date.now());
+      //commented line below because it is pointless since the class gets replaced by react
       navMeshEl.setAttribute('class', 'exclude_from_nav_mesh');
-      navMeshEl.setAttribute('visible', 'false');
+      navMeshEl.setAttribute('visible', 'true');
+      navMeshEl.setAttribute('position', document.getElementById('enclosure').object3D.position);
+      // navMeshEl.setAttribute('opacity', '.5');
+      // navMeshEl.setAttribute('wireframe', 'dummyValue');
+      // navMeshEl.setAttribute('material', 'vertexColors:face;opacity:.5;wireframe:true;');
       // navMeshEl.setAttribute('color','808080')
       this.sceneEl.appendChild(navMeshEl);
     }
@@ -290,7 +303,7 @@ class RecastPlugin {
     this.navMesh.material = new THREE.MeshStandardMaterial({ color: 0x808080, metalness: 0, roughness: 1 });
     exporter.parse(this.navMesh, (gltfContent) => {
       this.navMesh.material = backupMaterial;
-      this._download('navmesh.gltf', JSON.stringify(gltfContent));
+      // this._download('navmesh.gltf', JSON.stringify(gltfContent));
     }, { binary: false });
   }
 
@@ -390,7 +403,8 @@ class RecastPlugin {
           console.log('this is what was read')
           console.log(this.user.currentWorld)
           // this.dbFirebase.ref(currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
-          this.dbFirebase.ref("worlds").child(this.user.uid).child(this.user.currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
+          // this.dbFirebase.ref("worlds").child(this.user.uid).child(this.user.currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
+          this.dbFirebase.ref("worlds").child(this.user.uid).child(this.user.currentWorld).child("entities").child(this.sceneEl.querySelector('[nav-mesh]').getAttribute('id')).child('gltf-model').set("url(" + url + ")").then(function() {})
         }.bind(this))
 
 
