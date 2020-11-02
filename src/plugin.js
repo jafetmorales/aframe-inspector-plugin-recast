@@ -1,30 +1,20 @@
-/* global THREE, AFRAME */
-
 const Handlebars = require('handlebars');
 const RecastConfig = require('./recast-config');
 const panelTpl = require('./plugin.html');
 const GeometryReducer = require('./three-geometry-reducer');
 const OBJExporter = require('../lib/OBJExporter');
-
 require('./components/nav-debug-pointer');
 require('./plugin.scss');
 
+////CROSSTAB
 // import AWS object without services
 var AWS = require('aws-sdk/global');
 // import individual service
 var S3 = require('aws-sdk/clients/s3');
-
-
-// import { FBAppDatabase } from '../firebaseInit.js'
 const dbFirebase = require('./FirebaseApp.js')
-
 var firebase = require('firebase');
 
-
 class RecastError extends Error {}
-
-
-
 /**
  * Recast navigation mesh plugin.
  */
@@ -37,71 +27,23 @@ class RecastPlugin {
     this.navMesh = null;
     this.host = host;
     this.bindListeners();
+
+    ////CROSSTAB
     this.expiration = expiration
-
-    // this.bucketName = 'tensor-objects'
-    // this.s3 = new S3({
-    //   apiVersion: '2006-03-01',
-    //   params: { Bucket: this.bucketName }
-    // });
-
     this.dbFirebase = dbFirebase
-
-
-
-
-
     this.user = firebase.auth().currentUser;
-    console.log('The user is:')
-    console.log(this.user)
-
-
-
-
-
-
-    // this.currentWorld = "el_clon_29"
-    // this.ref = dbFirebase.ref('el_clon_29') //this.state.universe);
-    // this.objectId = 'nav-mesh' //jsonified.id //Date.now()
-    
-    
-    // const el= this.sceneEl.querySelector('[nav-mesh]')
-    
-    // this.objectId = Date.now()
-
-
-
-
-    console.log('the cognito token in plugin is:')
-    console.log(window.COGNITO_TOKEN)
     AWS.config.region = 'us-east-2';
     AWS.config.credentials = new AWS.CognitoIdentityCredentials({
       IdentityPoolId: 'us-east-2:dfec3483-aade-48a4-b2d1-40a142000817',
-      // IdentityId: AWS.config.credentials.identityId, //AWS.config.credentials.params.IdentityId,
       Logins: {
         'cognito-identity.amazonaws.com': window.COGNITO_TOKEN
       }
-
     });
-    // // obtain credentials
-    // AWS.config.credentials.get(function(err) {
-    //   if (!err) {
-    console.log('Cognito Identity Id: ' + AWS.config.credentials.identityId);
-    //     console.log('CONGRATS, PLUGIN CAN ACCESS AWS')
-
     this.bucketName = 'tensor-objects'
     this.s3 = new S3({
       apiVersion: '2006-03-01',
       params: { Bucket: this.bucketName }
     });
-    console.log('this.s3 is:')
-    console.log(this.s3)
-
-    //   }
-    //   else {
-    //     console.log('THERE WAS AN ERROR buddy')
-    //   }
-    // })
   }
 
   /** Attach event listeners to the panel DOM. */
@@ -178,8 +120,6 @@ class RecastPlugin {
 
         this.uploadNavMesh()
       });
-
-
   }
 
   /** Validate all form inputs. */
@@ -195,11 +135,6 @@ class RecastPlugin {
    * @return {FormData}
    */
   serializeScene() {
-    // const selectorInput = this.panelEl.querySelector(`input[name=selector]`);
-    // const selector = selectorInput.value;
-
-    // const selector = 'A-GRID,a-entity:not(.exclude_from_nav_mesh)'
-    // const selector = 'A-GRID,A-RING,a-entity:not(.exclude_from_nav_mesh):not(#camera2):not(#nav-mesh):not(.environment):not(A-SKY):not(#stars)'
     const selector = 'A-GRID,A-RING,a-entity:not(.exclude_from_nav_mesh):not(#camera2):not(.environment):not(A-SKY):not(#stars):not([nav-mesh])'
 
     this.sceneEl.object3D.updateMatrixWorld();
@@ -208,7 +143,6 @@ class RecastPlugin {
     const reducer = new GeometryReducer({ ignore: /^[XYZE]+|picker$/ });
 
     if (selector) {
-
       const selected = this.sceneEl.querySelectorAll(selector);
       const visited = new Set();
 
@@ -220,12 +154,9 @@ class RecastPlugin {
           visited.add(node);
         });
       });
-
     }
     else {
-
       this.sceneEl.object3D.traverse((o) => reducer.add(o));
-
     }
 
     console.info('Pruned scene graph:');
@@ -240,7 +171,6 @@ class RecastPlugin {
     formData.append('position', positionBlob);
     formData.append('index', indexBlob);
     return formData;
-
   }
 
   /**
@@ -265,7 +195,6 @@ class RecastPlugin {
    * @param  {THREE.Mesh} navMesh
    */
   injectNavMesh(navMesh) {
-    // let navMeshEl = this.sceneEl.querySelector('[nav-mesh]');
     //WE LOOK TO SEE IF THERE ARE ANY NAV MESHES ALREADY IN THE SCENE
     let navMeshEl = this.sceneEl.querySelector('[nav-mesh]');
     if (!navMeshEl) {
@@ -322,42 +251,12 @@ class RecastPlugin {
     this.navMesh.material = new THREE.MeshStandardMaterial({ color: 0x808080, metalness: 0, roughness: 1 });
     exporter.parse(this.navMesh, (gltfContent) => {
       this.navMesh.material = backupMaterial;
+      
+      ////CROSSTAB
       const data = JSON.stringify(gltfContent)
       const fileName = 'navmesh' + (new Date().getTime())
-
-
-      console.log('this.s3 is:')
-      console.log(this.s3)
       const cognitoIdentityId = AWS.config.credentials.identityId
       var folderKey = 'navs/' + cognitoIdentityId + '/' + 'navmesh_' + (new Date().getTime()) + '.gltf'
-
-
-      // this.s3.getSignedUrl('putObject',{
-      //   Bucket: this.bucketName,
-      //   Key: folderKey,
-      //   // ContentType: 'data:text/plain;charset=utf-8',
-      //   Body: 'body'//data//
-      //   // ACL: 'private' //OTHER TYPES OF ACLS THAT ARE MORE PUBLIC SHOULD THROW BACK AN UNAUTHORIZED ERROR
-      //   //   ,
-      //   // ContentMD5: 'false',
-      //   // Expires: 604800
-      //   // }, function(err, data) {
-      // }, function(err, url) {
-      //   if (err) {
-      //     console.log('error is')
-      //     console.log(err)
-      //     return alert('There was an error creating your album: ' + err.message);
-      //   }
-      //   alert('Successfully uploaded new navmesh named:' + fileName);
-      //   console.log('the url is:')
-      //   console.log(url)
-      //   this.ref.child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
-      // }.bind(this));
-
-
-
-
-
       this.s3.upload({
         // this.s3.getSignedUrl('putObject', {
         Bucket: this.bucketName,
@@ -371,49 +270,17 @@ class RecastPlugin {
         // }, function(err, data) {
       }, function(err, url) {
         if (err) {
-          console.log('error is')
-          console.log(err)
           return alert('There was an error creating your album: ' + err.message);
         }
-        // alert('Successfully uploaded new navmesh named:' + fileName);
-        console.log('the url is:')
-        console.log(url)
-
         var params = { Bucket: this.bucketName, Key: folderKey, Expires: this.expiration };
         var url = this.s3.getSignedUrl('getObject', params);
-        console.log('The URL is', url);
-
-
-
-
-
-
-        //     var user = firebase.auth().currentUser;
-        //     console.log('The user is:')
-        //     console.log(user)
-        //     this.dbFirebase.ref("users").child(user.uid).child("currentWorld").once("value").then(function(snapshot) {
-        //       const currentWorld = snapshot.toJSON();
-        //       console.log('this is what was read')
-        //       console.log(currentWorld)
-        //     // this.dbFirebase.ref(currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
-        // }.bind(this))
-
         this.dbFirebase.ref("users").child(this.user.uid).child("currentWorld").once("value").then(function(snapshot) {
           this.user.currentWorld = snapshot.toJSON();
-          console.log('this is what was read')
-          console.log(this.user.currentWorld)
-          // this.dbFirebase.ref(currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
-          // this.dbFirebase.ref("worlds").child(this.user.uid).child(this.user.currentWorld).child("entities").child(this.objectId).child('gltf-model').set("url(" + url + ")").then(function() {})
           this.dbFirebase.ref("worlds").child(this.user.uid).child(this.user.currentWorld).child("entities").child(this.sceneEl.querySelector('[nav-mesh]').getAttribute('id')).child('gltf-model').set("url(" + url + ")").then(function() {})
         }.bind(this))
-
-
-
-
       }.bind(this));
-
-
-
+    ////CROSSTAB ENDS HERE
+    
     }, { binary: false });
   }
 
@@ -516,20 +383,6 @@ AFRAME.registerComponent('inspector-plugin-recast-client', {
   },
   play: function() {
     this.plugin.setVisible(false);
-
-
-
-    //     function timeout() {
-    //     setTimeout(function () {
-    //         // Do Something Here
-    //         // Then recall the parent function to
-    //         // create a recursive loop.
-    //         timeout();
-    //       this.render() 
-    //     }.bind(this), this.data.expiration*1000);
-    // }
-
-
 
     this.rebuildIntervalId = setInterval(function() {
       console.log('this.render is::::')
