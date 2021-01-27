@@ -205,10 +205,10 @@ class RecastPlugin {
       navMeshEl.setAttribute('class', 'exclude_from_nav_mesh');
       navMeshEl.setAttribute('visible', 'true');
       navMeshEl.setAttribute('position', document.getElementById('enclosure').object3D.position);
-      // navMeshEl.setAttribute('opacity', '.5');
+      navMeshEl.setAttribute('opacity', '.5');
       // navMeshEl.setAttribute('wireframe', 'dummyValue');
       // navMeshEl.setAttribute('material', 'vertexColors:face;opacity:.5;wireframe:true;');
-      // navMeshEl.setAttribute('color','808080')
+      navMeshEl.setAttribute('color','808080')
       this.sceneEl.appendChild(navMeshEl);
     }
     setTimeout(() => {
@@ -382,7 +382,8 @@ AFRAME.registerComponent('inspector-plugin-recast-client', {
     clearInterval(this.rebuildIntervalId)
   },
   play: function() {
-    this.plugin.setVisible(false);
+    //WAS FALSE BUT JAFET CHANGED 1/27/2021
+    this.plugin.setVisible(true);
 
     this.rebuildIntervalId = setInterval(function() {
       console.log('this.render is::::')

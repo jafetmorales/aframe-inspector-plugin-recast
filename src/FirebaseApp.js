@@ -5,7 +5,7 @@ var firebase = require("firebase");
 
 // Initialize Firebase
   var config = {
-    apiKey: "AIzaSyCbzifLOPONyCkD-qKWrTZEYgGEJ7ENlCQ",
+    apiKey: "AIzaSyBxwTbPltkM5a8MiA5pG861i_Sx4o6_pew",
     authDomain: "vrquitect.firebaseapp.com",
     databaseURL: "https://vrquitect.firebaseio.com",
     projectId: "vrquitect",
