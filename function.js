@@ -4,8 +4,14 @@ const assert = require('fluent-assert');
 const recast = require('@donmccurdy/recast');
 const RecastConfig = require('./src/recast-config');
 
+var fs = require('fs');
+var https = require('https');
+var privateKey  = fs.readFileSync('./cert/server.key', 'utf8');
+var certificate = fs.readFileSync('./cert/server.crt', 'utf8');
+var credentials = {key: privateKey, cert: certificate};
+
 // const PORT = process.env.PORT || 3000;
-const PORT = 3000//process.env.PORT || 3000;
+const PORT = 8081//process.env.PORT || 3000;
 
 // ---------------------------------------- //
 
@@ -27,7 +33,7 @@ app.use(express.static('public'));
 // ---------------------------------------- //
 
 app.post('/v1/build/', upload, (req, res) => {
-
+console.log('received a request')
   const files = req.files || {};
   if (!files.position || !files.index) return res.sendStatus(400);
 
@@ -113,7 +119,22 @@ app.post('/v1/build/', upload, (req, res) => {
 
 // ---------------------------------------- //
 
-app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+// app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+
+
+
+// var httpServer = express.createServer(app);
+// // register(http);
+// httpsServer.listen(PORT);
+
+var httpsServer = https.createServer(credentials, app);
+// register(https);
+httpsServer.listen(PORT, () => {
+  console.log("server starting on port : " + PORT)
+});
+
+
+
 
 // ---------------------------------------- //
 

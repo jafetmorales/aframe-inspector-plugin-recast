@@ -73,14 +73,19 @@ class RecastPlugin {
    * a preview of the navigation mesh in the scene.
    */
   rebuild() {
+    
+    console.log('about to validate form')
     this.validateForm();
 
     this.clearNavMesh();
+    console.log('about to serialize scene')
     const body = this.serializeScene();
+    console.log('about to get three objloader')
     const loader = new THREE.OBJLoader();
     const params = this.serialize(this.settings);
 
     this.showSpinner();
+    console.log('about to try to fetch mesh')
     fetch(`${this.host}/v1/build/?${params}`, { method: 'post', body: body })
       .then((response) => response.json())
       .then((json) => {
@@ -93,6 +98,9 @@ class RecastPlugin {
           if (node.isMesh) meshes.push(node);
         });
 
+          console.log('got this number of meshes')
+          console.log(meshes.length)
+
         if (meshes.length !== 1) {
           console.warn('[aframe-inspector-plugin-recast] Expected 1 navmesh but got ' + meshes.length);
           if (meshes.length === 0) return;
@@ -101,6 +109,8 @@ class RecastPlugin {
         if (this.navMesh) this.sceneEl.object3D.remove(this.navMesh);
 
         this.navMesh = meshes[0];
+        console.log('this.navMesh is')
+        console.log(this.navMesh)
         this.navMesh.material = new THREE.MeshNormalMaterial();
         this.injectNavMesh(this.navMesh);
 
@@ -147,7 +157,12 @@ class RecastPlugin {
       const visited = new Set();
 
       [].forEach.call(selected, (el) => {
-        if (!el.object3D) return;
+        if (!el.object3D)
+        {
+          console.log('not a 3d object')
+          return
+        };
+          console.log('yes a 3d object, about to traverse')
         el.object3D.traverse((node) => {
           if (visited.has(node)) return;
           reducer.add(node);
@@ -162,10 +177,13 @@ class RecastPlugin {
     console.info('Pruned scene graph:');
     this.printGraph(reducer.getBuildList());
 
+    console.info('About to reduce');
     const { position, index } = reducer.reduce();
 
     // Convert vertices and index to Blobs, add to FormData, and return.
+    console.log('doing blob 1')
     const positionBlob = new Blob([new Float32Array(position)], { type: 'application/octet-stream' });
+    console.log('doing blob 2')
     const indexBlob = new Blob([new Int32Array(index)], { type: 'application/octet-stream' });
     const formData = new FormData();
     formData.append('position', positionBlob);
@@ -232,7 +250,8 @@ class RecastPlugin {
     this.navMesh.material = new THREE.MeshStandardMaterial({ color: 0x808080, metalness: 0, roughness: 1 });
     exporter.parse(this.navMesh, (gltfContent) => {
       this.navMesh.material = backupMaterial;
-      // this._download('navmesh.gltf', JSON.stringify(gltfContent));
+      //UNCOMMENTED 1/27/2021
+      this._download('navmesh.gltf', JSON.stringify(gltfContent));
     }, { binary: false });
   }
 
@@ -382,7 +401,7 @@ AFRAME.registerComponent('inspector-plugin-recast-client', {
     clearInterval(this.rebuildIntervalId)
   },
   play: function() {
-    //WAS FALSE BUT JAFET CHANGED 1/27/2021
+    //THIS IS FOR SHOWING THE PANEL THAT COMES WITH THE RECAST APP
     this.plugin.setVisible(true);
 
     this.rebuildIntervalId = setInterval(function() {

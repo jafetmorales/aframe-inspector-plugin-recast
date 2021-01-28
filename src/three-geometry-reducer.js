@@ -1,7 +1,7 @@
 const BufferGeometryUtils = require('../lib/BufferGeometryUtils');
 
 const DEFAULT_OPTIONS = {
-  maxExtent: 4000,//was 500 but changed by jafet
+  maxExtent: 40000,//was 500 but changed by jafet to 40000
   maxFileSize: 25000000,
   ignore: '',
 };
@@ -54,11 +54,17 @@ class GeometryReducer {
 
     const { maxExtent, maxFileSize } = this.options;
 
-    const boundingSphere = new THREE.Box3()
+console.log('about to create bounding sphere')
+
+
+    //YOU DON'T NEED BBOX SO FIGURE HOW TO DO THIS EFFICIENTLY
+    const boundingSphere = new THREE.Sphere()
+    const bbox = new THREE.Box3()
       .setFromObject( this.content )
-      .getBoundingSphere();
+      .getBoundingSphere(boundingSphere);
 
     if ( boundingSphere.radius > maxExtent ) {
+console.log('bounding sphere is greater than allowed extent')
 
       throw new Error(
         `Scene must have a bounding radius less than ${maxExtent}m and your bouding radius is ${boundingSphere.radius}. `
@@ -66,12 +72,15 @@ class GeometryReducer {
       );
 
     }
+    console.log('about to traverse')
 
     const geometries = [];
 
     // Traverse the scene and collect mesh geometry.
     this.content.traverse((node) => {
       if (!node.isMesh) return;
+      
+      console.log('traversing a node')
 
       let geometry = node.geometry;
       let attributes = geometry.attributes;

@@ -1,56 +1,24 @@
-// import firebase from "firebase";
-var firebase = require("firebase");
-// require('dotenv').config()
+// var firebase = require("firebase");
+var firebase = require('firebase/app');
+require('firebase/auth');
+require('firebase/database');
 
 
 // Initialize Firebase
   var config = {
-    apiKey: "AIzaSyBxwTbPltkM5a8MiA5pG861i_Sx4o6_pew",
+    apiKey: "AIzaSyADzByPSy2AVnGwyQdBJ6Cib-nkboQ-VmM",
     authDomain: "vrquitect.firebaseapp.com",
     databaseURL: "https://vrquitect.firebaseio.com",
     projectId: "vrquitect",
     storageBucket: "vrquitect.appspot.com",
     messagingSenderId: "64632163737"
   };
-const dbFirebase = firebase.initializeApp(config).database();
-
-module.exports = dbFirebase
-
-// const app =  (function() {
-//     var instance;
-
-//     function createInstance() {
-//       // var object = new Object("I am the instance");
-//       var object = firebase.initializeApp({
-//         apiKey: process.env.REACT_APP_FIREBASE_KEY,
-//         authDomain: process.env.REACT_APP_FIREBASE_DOMAIN,
-//         databaseURL: process.env.REACT_APP_FIREBASE_DATABASE,
-//         projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-//         storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-//         messagingSenderId: process.env.REACT_APP_FIREBASE_SENDER_ID
-//       });
+  
+  
+// const dbFirebase = firebase.initializeApp(config).database();
+// module.exports = dbFirebase
 
 
-//       return object;
-//     }
-
-//     return {
-//       getInstance: function() {
-//         if (!instance) {
-//           instance = createInstance();
-//         }
-//         return instance;
-//       }
-//     };
-//   })();
-
-// firebase.initializeApp({
-//   apiKey: process.env.REACT_APP_FIREBASE_KEY,
-//   authDomain: process.env.REACT_APP_FIREBASE_DOMAIN,
-//   databaseURL: process.env.REACT_APP_FIREBASE_DATABASE,
-//   projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-//   storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-//   messagingSenderId: process.env.REACT_APP_FIREBASE_SENDER_ID
-// });
-
-// export default FbApp;
+firebase.default.initializeApp(config);
+const dbFirebase=firebase.default.database()
+module.exports= dbFirebase
