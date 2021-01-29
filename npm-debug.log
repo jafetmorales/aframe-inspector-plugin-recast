@@ -1,0 +1,49 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/home/ec2-user/.nvm/versions/node/v6.14.4/bin/node',
+1 verbose cli   '/home/ec2-user/.nvm/versions/node/v6.14.4/bin/npm',
+1 verbose cli   'run',
+1 verbose cli   'dist' ]
+2 info using npm@3.10.10
+3 info using node@v6.14.4
+4 verbose run-script [ 'predist', 'dist', 'postdist' ]
+5 info lifecycle aframe-inspector-plugin-recast-client@0.0.1~predist: aframe-inspector-plugin-recast-client@0.0.1
+6 silly lifecycle aframe-inspector-plugin-recast-client@0.0.1~predist: no script for predist, continuing
+7 info lifecycle aframe-inspector-plugin-recast-client@0.0.1~dist: aframe-inspector-plugin-recast-client@0.0.1
+8 verbose lifecycle aframe-inspector-plugin-recast-client@0.0.1~dist: unsafe-perm in lifecycle true
+9 verbose lifecycle aframe-inspector-plugin-recast-client@0.0.1~dist: PATH: /home/ec2-user/.nvm/versions/node/v6.14.4/lib/node_modules/npm/bin/node-gyp-bin:/home/ec2-user/environment/aframe-inspector-plugin-recast-client/node_modules/.bin:/home/ec2-user/.nvm/versions/node/v6.14.4/bin:/usr/local/rvm/gems/ruby-2.4.1/bin:/usr/local/rvm/gems/ruby-2.4.1@global/bin:/usr/local/rvm/rubies/ruby-2.4.1/bin:/usr/local/bin:/bin:/usr/bin:/home/ec2-user/.local/bin:/home/ec2-user/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/aws/bin:/home/ec2-user/.local/bin:/home/ec2-user/bin:/home/ec2-user/.local/bin:/home/ec2-user/bin:/opt/aws/bin:/usr/local/rvm/bin:/home/ec2-user/.local/bin:/home/ec2-user/bin:/home/ec2-user/.local/bin:/home/ec2-user/bin
+10 verbose lifecycle aframe-inspector-plugin-recast-client@0.0.1~dist: CWD: /home/ec2-user/environment/aframe-inspector-plugin-recast-client
+11 silly lifecycle aframe-inspector-plugin-recast-client@0.0.1~dist: Args: [ '-c',
+11 silly lifecycle   'browserify src/plugin.js -o public/aframe-inspector-plugin-recast.js -t scssify -t stringify' ]
+12 silly lifecycle aframe-inspector-plugin-recast-client@0.0.1~dist: Returned: code: 1  signal: null
+13 info lifecycle aframe-inspector-plugin-recast-client@0.0.1~dist: Failed to exec dist script
+14 verbose stack Error: aframe-inspector-plugin-recast-client@0.0.1 dist: `browserify src/plugin.js -o public/aframe-inspector-plugin-recast.js -t scssify -t stringify`
+14 verbose stack Exit status 1
+14 verbose stack     at EventEmitter.<anonymous> (/home/ec2-user/.nvm/versions/node/v6.14.4/lib/node_modules/npm/lib/utils/lifecycle.js:255:16)
+14 verbose stack     at emitTwo (events.js:106:13)
+14 verbose stack     at EventEmitter.emit (events.js:191:7)
+14 verbose stack     at ChildProcess.<anonymous> (/home/ec2-user/.nvm/versions/node/v6.14.4/lib/node_modules/npm/lib/utils/spawn.js:40:14)
+14 verbose stack     at emitTwo (events.js:106:13)
+14 verbose stack     at ChildProcess.emit (events.js:191:7)
+14 verbose stack     at maybeClose (internal/child_process.js:920:16)
+14 verbose stack     at Process.ChildProcess._handle.onexit (internal/child_process.js:230:5)
+15 verbose pkgid aframe-inspector-plugin-recast-client@0.0.1
+16 verbose cwd /home/ec2-user/environment/aframe-inspector-plugin-recast-client
+17 error Linux 4.14.70-67.55.amzn1.x86_64
+18 error argv "/home/ec2-user/.nvm/versions/node/v6.14.4/bin/node" "/home/ec2-user/.nvm/versions/node/v6.14.4/bin/npm" "run" "dist"
+19 error node v6.14.4
+20 error npm  v3.10.10
+21 error code ELIFECYCLE
+22 error aframe-inspector-plugin-recast-client@0.0.1 dist: `browserify src/plugin.js -o public/aframe-inspector-plugin-recast.js -t scssify -t stringify`
+22 error Exit status 1
+23 error Failed at the aframe-inspector-plugin-recast-client@0.0.1 dist script 'browserify src/plugin.js -o public/aframe-inspector-plugin-recast.js -t scssify -t stringify'.
+23 error Make sure you have the latest version of node.js and npm installed.
+23 error If you do, this is most likely a problem with the aframe-inspector-plugin-recast-client package,
+23 error not with npm itself.
+23 error Tell the author that this fails on your system:
+23 error     browserify src/plugin.js -o public/aframe-inspector-plugin-recast.js -t scssify -t stringify
+23 error You can get information on how to open an issue for this project with:
+23 error     npm bugs aframe-inspector-plugin-recast-client
+23 error Or if that isn't available, you can get their info via:
+23 error     npm owner ls aframe-inspector-plugin-recast-client
+23 error There is likely additional logging output above.
+24 verbose exit [ 1, true ]

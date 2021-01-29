@@ -14,6 +14,8 @@ var S3 = require('aws-sdk/clients/s3');
 const dbFirebase = require('./FirebaseApp.js')
 var firebase = require('firebase');
 
+var $ = require( "jquery" );
+
 class RecastError extends Error {}
 /**
  * Recast navigation mesh plugin.
@@ -27,6 +29,7 @@ class RecastPlugin {
     this.navMesh = null;
     this.host = host;
     this.bindListeners();
+    this.url=""
 
     ////CROSSTAB
     this.expiration = expiration
@@ -112,7 +115,8 @@ class RecastPlugin {
         console.log('this.navMesh is')
         console.log(this.navMesh)
         this.navMesh.material = new THREE.MeshNormalMaterial();
-        this.injectNavMesh(this.navMesh);
+        ////
+        // this.injectNavMesh(this.navMesh);
 
         // Delay resolving, so first render blocks hiding the spinner.
         return new Promise((resolve) => setTimeout(resolve, 30));
@@ -129,6 +133,11 @@ class RecastPlugin {
         this.exportGLTF()
 
         this.uploadNavMesh()
+        // console.log('returned url is')
+        // console.log(this.url)
+        
+        ////
+        // this.injectNavMesh(this.navMesh,this.url);
       });
   }
 
@@ -212,23 +221,56 @@ class RecastPlugin {
    * Injects navigation mesh into the scene, creating entity if needed.
    * @param  {THREE.Mesh} navMesh
    */
-  injectNavMesh(navMesh) {
+  injectNavMesh(navMesh,url) {
     //WE LOOK TO SEE IF THERE ARE ANY NAV MESHES ALREADY IN THE SCENE
+    
+    
+    //THIS REMOVAL SHOULD BE DONE ONLY IN THE DOM, AND A REMOVAL MUTATION LISTENER IN TRAINMAN SHOULD FIX FIREBASE AUTOMATICALLY SO YOU NEED TO IMPLEMENT THAT!!!
+        //   this.dbFirebase.ref("users").child(this.user.uid).child("currentWorld").once("value").then(function(snapshot) {
+        //   this.user.currentWorld = snapshot.toJSON();
+        //   this.dbFirebase.ref("worlds").child(this.user.uid).child(this.user.currentWorld).child("entities").child(this.sceneEl.querySelector('[nav-mesh]').getAttribute('id')).remove();
+        // }.bind(this))
+    // $("[nav-mesh]").remove();
+
+
+    // // navMeshEl.forEach()
+    // if(navMeshEl)
+    // {
+    //   navMeshEl.parentNode.removeChild(navMeshEl);
+    // }
+    // else
+    // {
+
+
     let navMeshEl = this.sceneEl.querySelector('[nav-mesh]');
     if (!navMeshEl) {
       navMeshEl = document.createElement('a-entity');
+    }
+    console.log('injecting mesh from')
+    console.log(url)
       navMeshEl.setAttribute('nav-mesh', 'DUMMY_STRING_BRO');
-      navMeshEl.setAttribute('id', Date.now());
+      // navMeshEl.setAttribute('id', Date.now());
       //commented line below because it is pointless since the class gets replaced by react
       navMeshEl.setAttribute('class', 'exclude_from_nav_mesh');
       navMeshEl.setAttribute('visible', 'true');
       navMeshEl.setAttribute('position', document.getElementById('enclosure').object3D.position);
+      navMeshEl.setAttribute('color','#EF2D5E')
       navMeshEl.setAttribute('opacity', '.5');
+      navMeshEl.setAttribute('scale', '1 1 1');
+      // navMeshEl.setAttribute('rotation', '1 1 1');
+
+
+      // navMeshEl.setAttribute('wireframe', 'true');
       // navMeshEl.setAttribute('wireframe', 'dummyValue');
       // navMeshEl.setAttribute('material', 'vertexColors:face;opacity:.5;wireframe:true;');
-      navMeshEl.setAttribute('color','808080')
+
+      navMeshEl.setAttribute('gltf-model', "url(" + url + ")");
+      
+      // navMeshEl.setAttribute('material',"side: double; color: #EF2D5E; transparent: false; opacity: 0.5")
+      
       this.sceneEl.appendChild(navMeshEl);
-    }
+    // }
+    
     setTimeout(() => {
       navMeshEl.setObject3D('mesh', navMesh);
       const navMeshComponent = navMeshEl.components['nav-mesh'];
@@ -292,11 +334,18 @@ class RecastPlugin {
           return alert('There was an error creating your album: ' + err.message);
         }
         var params = { Bucket: this.bucketName, Key: folderKey, Expires: this.expiration };
-        var url = this.s3.getSignedUrl('getObject', params);
-        this.dbFirebase.ref("users").child(this.user.uid).child("currentWorld").once("value").then(function(snapshot) {
-          this.user.currentWorld = snapshot.toJSON();
-          this.dbFirebase.ref("worlds").child(this.user.uid).child(this.user.currentWorld).child("entities").child(this.sceneEl.querySelector('[nav-mesh]').getAttribute('id')).child('gltf-model').set("url(" + url + ")").then(function() {})
-        }.bind(this))
+        this.url = this.s3.getSignedUrl('getObject', params);
+        this.injectNavMesh(this.navMesh,this.url);
+
+        
+        // console.log('the url to be returned is')
+        // console.log(url)        
+            
+////        
+      //   this.dbFirebase.ref("users").child(this.user.uid).child("currentWorld").once("value").then(function(snapshot) {
+      //     this.user.currentWorld = snapshot.toJSON();
+      //     this.dbFirebase.ref("worlds").child(this.user.uid).child(this.user.currentWorld).child("entities").child(this.sceneEl.querySelector('[nav-mesh]').getAttribute('id')).child('gltf-model').set("url(" + url + ")").then(function() {})
+      //   }.bind(this))
       }.bind(this));
     ////CROSSTAB ENDS HERE
     
@@ -402,7 +451,7 @@ AFRAME.registerComponent('inspector-plugin-recast-client', {
   },
   play: function() {
     //THIS IS FOR SHOWING THE PANEL THAT COMES WITH THE RECAST APP
-    this.plugin.setVisible(true);
+    // this.plugin.setVisible(false);
 
     this.rebuildIntervalId = setInterval(function() {
       console.log('this.render is::::')
